@@ -8,65 +8,67 @@
 # TBA:
 # 1) go through all pages for each letter, for now only
 # looking at main pages
-# 2) optimize list of names copy used for url navigation
-# 3) add data to a table
-# 4) likely generate ENTIRE list of names before scraping. would be faster
-
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
-# TBA:
+import csv
 
 # Manually adjustable alphabet
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
             'j', 'k', 'l', 'm','n', 'o','p', 'q', 'r',
             's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-
+with open('innovators.csv', 'w', newline='') as file:
+    writer = csv.writer(file, delimiter=',')
 # Going through each letter of the alphabet
-for letter in alphabet:
+    for currentletter in alphabet:
 
-    url = "https://www.babynames.com/names/" + letter
-    page = urlopen(url)
-
-    html = page.read().decode("utf-8")
-    soup = BeautifulSoup(html, "html.parser")
-
-    # extracting name text from html
-    namehtml = soup.find_all('div', class_="namesindex")
-    namestext = namehtml[0].getText()
-    namestext = namestext.splitlines()
-    namestext = list(filter(None, namestext))
-
-    # cleaning list of names
-    n = range(0,len(namestext))
-    for index in n:
-        namestext[index] = namestext[index].strip()
-    
-    # making a copy of names to replace special characters for url
-    # navigation
-    # *** To-do: make namestextcopy ignore case, replace all lowercase
-    # special characters ***
-    namestextcopy = namestext
-    for index in n:
-        namestextcopy[index] = namestext[index].replace(' ', '%2B')
-        namestextcopy[index] = namestext[index].replace('é', 'e')
-        namestextcopy[index] = namestext[index].replace('Ç', 'c')
-        namestextcopy[index] = namestext[index].replace('í', 'i')
-
-    # scraping individual name web pages
-    for currentname in namestextcopy:
-        # TBA: make this look at name from original namestext list
-        url = "https://www.babynames.com/name/" + currentname
+        url = "https://www.babynames.com/names/" + currentletter
         page = urlopen(url)
 
         html = page.read().decode("utf-8")
         soup = BeautifulSoup(html, "html.parser")
-
-        desc = soup.find_all('div', class_='name-meaning')
-        gender = desc[0].getText()
-        origin = desc[1].getText()
-        meaning = desc[2].getText()
-        print(currentname)
-        print(gender)
-        print(origin)
-        print(meaning)
     
+        # extracting name text from html
+        namehtml = soup.find_all('div', class_="namesindex")
+        namestext = namehtml[0].getText()
+        namestext = namestext.splitlines()
+        namestext = list(filter(None, namestext))
+
+        # cleaning whitespace from list of names
+        n = range(0,len(namestext))
+        for index in n:
+            namestext[index] = namestext[index].strip()
+    
+        # making a copy of names to replace special characters for url
+        # navigation
+        namestextcopy = namestext
+        for index in n:
+            namestextcopy[index] = namestext[index].lower()
+            namestextcopy[index] = namestext[index].replace(' ', '%2B')
+            namestextcopy[index] = namestext[index].replace('á', 'a')
+            namestextcopy[index] = namestext[index].replace('ç', 'c')
+            namestextcopy[index] = namestext[index].replace('ë', 'e')
+            namestextcopy[index] = namestext[index].replace('é', 'e')
+            namestextcopy[index] = namestext[index].replace('í', 'i')
+            namestextcopy[index] = namestext[index].replace('ó', 'o')
+            namestextcopy[index] = namestext[index].replace('ü', 'u')
+            namestextcopy[index] = namestext[index].replace('ú', 'u')
+
+    # scraping individual name web pages
+        for currentname in namestextcopy:
+            url = "https://www.babynames.com/name/" + currentname
+            page = urlopen(url)
+
+            html = page.read().decode("utf-8")
+            soup = BeautifulSoup(html, "html.parser")
+
+            header = soup.find_all('h1', class_="baby-name")
+            desc = soup.find_all('div', class_='name-meaning')
+            name = header[0].getText()
+            gender = desc[0].getText()
+            origin = desc[1].getText()
+            meaning = desc[2].getText()
+            print(name)
+            print(gender)
+            print(origin)
+            print(meaning)
+            writer.writerows([name,gender,origin,meaning])
